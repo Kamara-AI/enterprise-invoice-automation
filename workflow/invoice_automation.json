@@ -1,0 +1,1215 @@
+{
+  "name": "Invoice extractor and Fraud detector",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "has:attachment subject:(invoice OR bill)"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "21828ff3-ae4a-4db6-93ba-e93b3427f408",
+      "name": "Gmail Trigger",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1eb42d8-404e-4cef-8902-7c21a34acdb6",
+              "name": "=invoice_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "7870fc05-dc6b-4798-bedc-b1f588ab8e7f",
+              "name": "from",
+              "value": "={{ $json.headers.from }}",
+              "type": "string"
+            },
+            {
+              "id": "7833de22-7eb0-4911-b349-f2a95cff77f4",
+              "name": "subject",
+              "value": "={{ $json.headers.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "cba530f4-655d-4fb8-9de9-385c2aea065d",
+              "name": "date",
+              "value": "={{ $json.headers.date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0f8dfcd3-df9b-46ca-8bc5-ca3d151c4b9d",
+      "name": "Edit Fields",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "69a14faf-63bb-45ce-8154-043fd8fc40aa",
+      "name": "Wait",
+      "webhookId": "9c259499-6b29-4841-a0fd-e4fb2cee747d",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        896,
+        208
+      ],
+      "id": "1703a8f1-2261-4dd8-a99a-c47e37de8f60",
+      "name": "Google Gemini Chat Model",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.markdown }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        208
+      ],
+      "id": "9d50d185-0b0f-4e9b-a8f5-b7ff36cfede9",
+      "name": "Simple Memory",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "43d6f96c-3113-4414-9068-3ffa6aaaa9e2",
+              "leftValue": "={{ $json.created_at }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2416,
+        -16
+      ],
+      "id": "c1391d40-8fdd-4f1a-9da8-b2efbfbcc9f0",
+      "name": "If",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "tableId": "vendors",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $node[\"Clean output\"].json[\"vendor_name\"] }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2624,
+        -96
+      ],
+      "id": "bd995a2c-7c8b-46c1-a5c8-23c8de28efb9",
+      "name": "Adds Vendor name",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3de900b7-6ad9-47bc-9b2a-b32456a4018c",
+              "leftValue": "={{ $json.created_at }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3072,
+        16
+      ],
+      "id": "14dea6b2-97c1-4e4e-9b85-6c432a115968",
+      "name": "If1",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "invoices",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "invoice_number",
+              "condition": "eq",
+              "keyValue": "={{ $('Clean output').item.json.invoice_number }}"
+            },
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        16
+      ],
+      "id": "03e2fc19-ec06-4dba-8021-9f18143183da",
+      "name": "id duplicate tracker",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "vendors",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "=name",
+              "condition": "eq",
+              "keyValue": "={{ $('Clean output').item.json.vendor_name }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        -16
+      ],
+      "id": "3bb8cdfe-45eb-4aa0-8b26-1bddd10b462d",
+      "name": "Checks Vendor_name",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "text": "=\u26a0\ufe0f FRAUD/DUPLICATE ALERT: Invoice {{ $json.invoice_number }} from {{ $node[\"Clean output\"].json.vendor_name }} already exists in the ledger!",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        3264,
+        -160
+      ],
+      "id": "9fb8f559-e1dd-4be5-a785-638463930209",
+      "name": "Fraud Alert",
+      "webhookId": "87f58e6b-9d4a-4b7b-a685-a9aae5564ea1",
+      "retryOnFail": true,
+      "credentials": {
+        "slackApi": {
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "id"
+        },
+        "message": "=\ud83d\udce5 New Invoice for Approval\n\nVendor: {{ $node[\"Clean output\"].json.vendor_name }}\n\n\nAmount: {{ $node[\"Clean output\"].json.currency }} {{ $node[\"Clean output\"].json.total_amount }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        3312,
+        208
+      ],
+      "id": "a634ed5a-e818-4b09-9276-3bffd2a7e92f",
+      "name": "Approval",
+      "webhookId": "c149667b-2838-4f00-98c6-f4b42cbe01bc",
+      "retryOnFail": true,
+      "credentials": {
+        "slackApi": {
+          "id": "YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "invoices",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "invoice_number",
+              "fieldValue": "={{ $node[\"Clean output\"].json[\"invoice_number\"] }}"
+            },
+            {
+              "fieldId": "total_amount",
+              "fieldValue": "={{ $node[\"Clean output\"].json[\"total_amount\"] }}"
+            },
+            {
+              "fieldId": "currency",
+              "fieldValue": "={{ $node[\"Clean output\"].json[\"currency\"] }}"
+            },
+            {
+              "fieldId": "vendor_name",
+              "fieldValue": "={{ $node[\"Clean output\"].json.vendor_name }}"
+            },
+            {
+              "fieldId": "tax_amount",
+              "fieldValue": "={{ $node[\"Clean output\"].json.tax_amount }}"
+            },
+            {
+              "fieldId": "raw_ai_output",
+              "fieldValue": "={{ $node[\"Context extraction\"].json }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3504,
+        208
+      ],
+      "id": "d7e83247-f408-4886-a13a-87604a41b323",
+      "name": "Invoice Database",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "invoices",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Invoice Database').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "APPROVED"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3856,
+        208
+      ],
+      "id": "3bd1af8e-800b-4649-817f-650dad1cc9ea",
+      "name": "Update a row",
+      "retryOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloud.llamaindex.ai/api/v1/parsing/upload",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "attachment_0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "2aa11cd3-a289-4a3b-a4e5-616ca4ba2ff8",
+      "name": "llamaParse",
+      "retryOnFail": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_LLAMAPARSE_CREDENTIAL_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/v1/parsing/job/{{ $json.id }}/result/markdown ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        816,
+        0
+      ],
+      "id": "1dbc15d2-cb69-4072-88c5-3c324752e389",
+      "name": "llamaParse1",
+      "retryOnFail": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_LLAMAPARSE_CREDENTIAL_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.markdown }}",
+        "options": {
+          "systemMessage": "Examine the following invoice text and return a JSON object with these keys: vendor_name, invoice_number, sub_total,  total_amount, tax_amount, and currency. Return ONLY the JSON."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "b4f5bed3-5742-4dd3-8936-70c8d3bef367",
+      "name": "Context extraction",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4144,
+        208
+      ],
+      "id": "5855a101-6d69-4839-afa0-0d7ccc26c53f",
+      "name": "Remove label from message",
+      "webhookId": "1aea751b-e43d-410d-8950-f0c865800d03",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "labelIds": [
+          "Label_4039299963578103988"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        4416,
+        208
+      ],
+      "id": "1d5197ea-c1b2-4f28-a88b-6be9c504a762",
+      "name": "Add label to message",
+      "webhookId": "b4a2e2c9-7386-4f95-8460-c3f5de01dc64",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2304,
+        192
+      ],
+      "id": "a90baed0-860a-44c8-8b2f-8f9d94c4ec18",
+      "name": "Remove label from message1",
+      "webhookId": "1aea751b-e43d-410d-8950-f0c865800d03",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "labelIds": [
+          "Label_4039299963578103988"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2512,
+        192
+      ],
+      "id": "0474babe-0555-4e7a-95a3-f240caef530d",
+      "name": "Add label to message1",
+      "webhookId": "b4a2e2c9-7386-4f95-8460-c3f5de01dc64",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3456,
+        -160
+      ],
+      "id": "fa6c09fa-4fdf-4905-8fb8-8e770fe5d2dc",
+      "name": "Remove label from message2",
+      "webhookId": "1aea751b-e43d-410d-8950-f0c865800d03",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "labelIds": [
+          "Label_4039299963578103988"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3664,
+        -160
+      ],
+      "id": "02435215-14f1-4a55-b9f1-83ac5d426089",
+      "name": "Add label to message2",
+      "webhookId": "b4a2e2c9-7386-4f95-8460-c3f5de01dc64",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        384
+      ],
+      "id": "761bd46b-90d8-43fb-bf84-9096b9c1b506",
+      "name": "Remove label from message3",
+      "webhookId": "1aea751b-e43d-410d-8950-f0c865800d03",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "labelIds": [
+          "Label_4039299963578103988"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        384
+      ],
+      "id": "eff3b6ce-1900-40f9-bdc6-9f4294be7a78",
+      "name": "Add label to message3",
+      "webhookId": "b4a2e2c9-7386-4f95-8460-c3f5de01dc64",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $node[\"Gmail Trigger\"].json.id }}",
+        "message": "=<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">\n  <p>Hello,</p>\n  \n  <p>We received your email, but our automated system could not process the attached invoice because some critical information is missing or unreadable.</p>\n  \n  <p>To ensure your payment is processed without delay, please reply to this email with a new attachment that meets these requirements:</p>\n  \n  <ul style=\"background-color: #f9f9f9; padding: 15px 30px; border-left: 5px solid #d9534f;\">\n    <li><strong>Clear Scan:</strong> The PDF must be high-resolution and not blurry.</li>\n    <li><strong>No Passwords:</strong> Ensure the file is not password-protected.</li>\n    <li><strong>Visible Data:</strong> The <b>Invoice Number</b> and <b>Grand Total</b> must be clearly visible.</li>\n  </ul>\n\n  <p>Once we receive a readable copy, your invoice will be moved to the next stage of approval.</p>\n\n  <p>Best Regards,<br>\n  <strong>Accounts Payable Team</strong></p>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        384
+      ],
+      "id": "5f397fc1-cdb3-41b5-b2b8-1d37fab674da",
+      "name": "Reply to a Sender",
+      "webhookId": "55b78dd5-7a77-41d8-bd14-20d4e94f16d0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Capture the data - Updated to match your 'sub_total' field\nconst net = parseFloat($node[\"Clean output\"].json.sub_total || $node[\"Clean output\"].json.subtotal || 0);\nconst vat = parseFloat($node[\"Clean output\"].json.tax_amount || 0);\nconst total = parseFloat($node[\"Clean output\"].json.total_amount || 0);\n\n// 2. Perform Internal Calculations\nconst expectedTotal = parseFloat((net + vat).toFixed(2));\nconst expectedVat = parseFloat((net * 0.20).toFixed(2)); \n\n// 3. Run Checks\nconst isSumCorrect = Math.abs(expectedTotal - total) < 0.05;\nconst isRateCorrect = Math.abs(expectedVat - vat) < 0.05;\n\n// 4. Determine Status\nlet status = \"\u2705 Verified\";\nlet note = \"All calculations are correct.\";\n\nif (!isSumCorrect) {\n  status = \"\u274c SUM ERROR\";\n  note = `Addition Mismatch: Net (\u00a3${net}) + Tax (\u00a3${vat}) is \u00a3${expectedTotal}, but invoice says \u00a3${total}.`;\n} else if (!isRateCorrect) {\n  status = \"\u26a0\ufe0f TAX RATE ERROR\";\n  note = `Tax Mismatch: For 20%, VAT should be \u00a3${expectedVat}, but invoice says \u00a3${vat}.`;\n}\n\nreturn {\n  math_status: status,\n  is_valid: isSumCorrect && isRateCorrect,\n  error_details: note,\n  audit_date: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        0
+      ],
+      "id": "22907cd9-fd97-43a3-b89e-66f981233ac2",
+      "name": "Calculator",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "sendTo": "your-finance-team@company.com",
+        "subject": "=\u26a0\ufe0f Invoice Calculation Error: {{ $node[\"Clean output\"].json.vendor_name }}",
+        "emailType": "text",
+        "message": "=Attention Finance Team,\n\nAn invoice has failed the automated integrity check and has been paused.\n\n\nVendor: {{ $node[\"Clean output\"].json.vendor_name }} Invoice #: {{ $node[\"Clean output\"].json.invoice_number }} \nError Detected: {{ $json.math_status }}\nExplanation: {{ $json.error_details }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2112,
+        192
+      ],
+      "id": "c0e3b009-02bd-4da6-8719-5cdf662708d2",
+      "name": "Innaccurate Totals",
+      "webhookId": "b96b1552-13d9-41d5-bc77-7d5323423c0c",
+      "retryOnFail": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1312,
+        0
+      ],
+      "id": "be43ab23-092a-493e-88de-4d757f7cf7ec",
+      "name": "Clean output",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3de4d7c4-f2be-446c-a8cf-94f914ca7dfe",
+              "leftValue": "={{ $json.invoice_number }}",
+              "rightValue": "[null]",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1520,
+        0
+      ],
+      "id": "9f8c44b5-8d1a-48a8-a1d7-b5c49f70b4e6",
+      "name": "Invoice QA"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "89933fb4-4f45-4d97-bed1-0cac72215a9d",
+              "leftValue": "={{ $json.is_valid }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1952,
+        0
+      ],
+      "id": "5e01bfff-85c0-430a-bc44-61a424bdb0ec",
+      "name": "Accuracy mismatch",
+      "retryOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "llamaParse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "llamaParse1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Context extraction",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Context extraction",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Adds Vendor name",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "id duplicate tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adds Vendor name": {
+      "main": [
+        [
+          {
+            "node": "id duplicate tracker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Fraud Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "id duplicate tracker": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checks Vendor_name": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval": {
+      "main": [
+        [
+          {
+            "node": "Invoice Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Database": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "llamaParse": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "llamaParse1": {
+      "main": [
+        [
+          {
+            "node": "Context extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Context extraction": {
+      "main": [
+        [
+          {
+            "node": "Clean output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fraud Alert": {
+      "main": [
+        [
+          {
+            "node": "Remove label from message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Remove label from message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove label from message": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove label from message1": {
+      "main": [
+        [
+          {
+            "node": "Add label to message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove label from message2": {
+      "main": [
+        [
+          {
+            "node": "Add label to message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove label from message3": {
+      "main": [
+        [
+          {
+            "node": "Add label to message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to a Sender": {
+      "main": [
+        [
+          {
+            "node": "Remove label from message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "main": [
+        [
+          {
+            "node": "Accuracy mismatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Innaccurate Totals": {
+      "main": [
+        [
+          {
+            "node": "Remove label from message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean output": {
+      "main": [
+        [
+          {
+            "node": "Invoice QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice QA": {
+      "main": [
+        [
+          {
+            "node": "Calculator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply to a Sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accuracy mismatch": {
+      "main": [
+        [
+          {
+            "node": "Checks Vendor_name",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Innaccurate Totals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "versionId": "bfe20a5a-c325-42ba-8584-a2f0a259e34f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_INSTANCE_ID"
+  },
+  "id": "lazF1jFqaEPeG4xXDbaxD",
+  "tags": []
+}
