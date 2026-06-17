@@ -1,5 +1,7 @@
 # Enterprise Invoice Automation & Security Suite
 
+![Workflow Canvas](assets/workflow-canvas.png)
+
 An n8n workflow that autonomously processes incoming invoices from Gmail — extracting data with AI, validating integrity through a triple-check audit system, detecting fraud, and requiring human approval before writing to the database.
 
 Built as a production-ready, client-deployable system.
@@ -181,6 +183,8 @@ create table invoices (
 ## Project Status
 
 Production-ready. Built and tested with live invoice data. Execution logs confirm successful end-to-end runs across all branches including fraud detection and HITL approval paths.
+
+![Execution Logs](assets/execution-logs.png)
 
 ---
 
