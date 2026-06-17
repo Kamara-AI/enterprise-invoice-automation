@@ -8,6 +8,16 @@ Built as a production-ready, client-deployable system.
 
 ---
 
+## Screenshots
+
+**Slack HITL Approval — invoice paused until a human clicks Approve**
+![Slack Approval](assets/slack-approval.png)
+
+**Supabase Invoice Ledger — real vendor data written after approval**
+![Supabase Ledger](assets/supabase-ledger.png)
+
+---
+
 ## The Problem It Solves
 
 | Manual Problem | Automated Solution | Business Impact |
