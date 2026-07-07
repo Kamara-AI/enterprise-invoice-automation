@@ -22,7 +22,7 @@ Built as a production-ready, client-deployable system.
 
 | Manual Problem | Automated Solution | Business Impact |
 |---|---|---|
-| Staff spend hours typing PDF data into systems | LlamaParse + Gemini LLM converts PDFs to structured JSON | Processing time: hours → seconds |
+| Staff spend hours typing PDF data into systems | LlamaParse + Openrouter converts PDFs to structured JSON | Processing time: hours → seconds |
 | Blurry or incomplete invoices stall the process | Gate 1 auto-detects unreadable files and requests resubmission | 100% data integrity before touching financial records |
 | Human error in tax and total calculations | Dedicated math engine re-calculates subtotals and VAT | Eliminates overpayment and audit failures |
 | Duplicate invoices and fraud go undetected | Every invoice number cross-referenced against Supabase ledger | 24/7 fraud detection with instant Slack alerts |
