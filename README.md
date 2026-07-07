@@ -38,7 +38,7 @@ flowchart TD
     B --> C[LlamaParse\nUpload PDF]
     C --> D[Wait 10s]
     D --> E[LlamaParse\nFetch Markdown]
-    E --> F[Gemini LLM\nExtract JSON Fields]
+    E --> F[Openrouter\nExtract JSON Fields]
     F --> G[Clean Output\nParse JSON]
     G --> H{Gate 1: Invoice QA\nInvoice number present?}
     H -- No --> I[Auto-Reply to Sender\nRequest resubmission]
